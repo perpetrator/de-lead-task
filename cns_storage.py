@@ -11,7 +11,7 @@ def store_data(data: dict, config: dict) -> bool:
     :return: True if success, False otherwise
     """
     try:
-        print(data)
+        #print(data)
         time_idx = str(time.time())
         with open(f"data_{time_idx}.json", "w") as f:
             json.dump(data, f)

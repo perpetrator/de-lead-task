@@ -28,8 +28,8 @@ while True:
 
 def do_scrapping(config: dict) -> bool:
     data = scrap(config)
-    validated_data = validate_data(data)
-    store_data(validated_data, config)
+    valid_jokes, invalid_jokes = validate_data(data, config)
+    store_data(valid_jokes, config)
     return True
 
 
