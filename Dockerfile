@@ -1,5 +1,7 @@
 FROM python:latest
 
+VOLUME /var/log/scrapper
+
 WORKDIR /usr/app/src
 
 COPY . .
