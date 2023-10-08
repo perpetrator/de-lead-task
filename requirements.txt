@@ -1,2 +1,5 @@
 requests==2.28.1
 schema==0.7.5
+pyodbc
+pandas
+sqlalchemy

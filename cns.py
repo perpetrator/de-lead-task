@@ -6,8 +6,8 @@ import ast
 from cns_common_functions import load_config
 from cns_scraper import scrap
 from cns_validator import validate_data
-from cns_storage import store_data
-
+import cns_storage
+import pandas as pd
 
 ENV_TYPE = os.environ["ENV_TYPE"]
 
@@ -28,8 +28,12 @@ while True:
 
 def do_scrapping(config: dict) -> bool:
     data = scrap(config)
-    valid_jokes, invalid_jokes = validate_data(data, config)
-    store_data(valid_jokes, config)
+    valid_jokes, invalid_jokes = validate_data(data)
+    print(type(valid_jokes))
+    print(type(invalid_jokes))
+    df_valid_jokes = pd.DataFrame(valid_jokes)
+    print(df_valid_jokes.head())
+    #storage = cns_storage.jokes_storage(config)
     return True
 
 

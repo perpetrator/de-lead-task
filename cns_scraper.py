@@ -15,6 +15,7 @@ def scrap(config: dict) -> dict:
         if response.status_code == 200:
             return response.json()
         else:
+            response = {}
             logging.error("Error while scraping: " + str(response.status_code))
     except Exception as e:
         logging.error("Error while scraping: " + str(e))
@@ -22,4 +23,4 @@ def scrap(config: dict) -> dict:
     finally:
         logging.info("Scraping done!")
 
-    return response.json()
+    return response
