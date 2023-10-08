@@ -2,7 +2,7 @@ import configparser
 import logging
 
 
-def load_config(config_file: str):
+def load_config(config_file: str) -> dict:
     """
     Function to load config file
     :param config_file: path to config file

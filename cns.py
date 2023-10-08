@@ -1,12 +1,13 @@
-import requests
-import time
-import json
-from datetime import date, datetime
+from datetime import date
 import os
 import logging
 import argparse
-from cns_common_functions import load_config
 import ast
+from cns_common_functions import load_config
+from cns_scraper import scrap
+from cns_validator import validate_data
+from cns_storage import store_data
+
 
 ENV_TYPE = os.environ["ENV_TYPE"]
 
@@ -25,9 +26,10 @@ while True:
 '''
 
 
-def run_script(config: dict) -> bool:
-    logging.info("Started scraping...")
-    print(config['URL'])
+def do_scrapping(config: dict) -> bool:
+    data = scrap(config)
+    validated_data = validate_data(data)
+    store_data(validated_data, config)
     return True
 
 
@@ -50,7 +52,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.config_path is not None:
         print("Loading config file: ", str(args.config_path))
-        config = load_config(args.config_path)
+        config = load_config(args.config_path)[ENV_TYPE]
     else:
         print("Loading default config")
         config = load_config("cns_config.ini")[ENV_TYPE]
@@ -71,4 +73,4 @@ if __name__ == "__main__":
         force=True
     )
 
-    run_script(config)
+    do_scrapping(config)
