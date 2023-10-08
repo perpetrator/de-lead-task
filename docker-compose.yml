@@ -1,0 +1,55 @@
+version: "0.7"
+services:
+
+  sql-server-db:
+    container_name: sql-server-db
+    hostname: sql_server_db
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    ports:
+      - "1433:1433"
+    environment:
+      SA_PASSWORD: "yourStrong(!)Password"
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    networks:
+       - deleadtask
+
+  scraper:
+    container_name: scraper
+    image: alpine:3.15
+    volumes:
+      - logs:/var/log/scraper
+      - .:/usr/app/src
+    environment:
+      ENV_TYPE: ${ENV_TYPE}
+    networks:
+      - deleadtask
+    env_file: .env
+    depends_on:
+      - sql-server-db
+    working_dir: /usr/app/src
+    build:
+      context: .
+    links:
+      - "sql_server_db:sql_server_db"
+    command: >
+      sh -c '
+        if [ -z ${ENV_TYPE} ]; then
+          echo "Set the ENV_TYPE environment variable in the .env file!";
+          exit 1;
+        fi;
+      apk add gcc g++ python3 python3-dev unixodbc unixodbc-dev py3-pip gnupg curl;
+      pip install --upgrade pip setuptools wheel;
+      pip install -r requirements.txt;
+      chmod +x /usr/app/src/install_odbc.sh;
+      /usr/app/src/install_odbc.sh;
+      python3 /usr/app/src/cns.py;
+      '
+
+networks:
+  deleadtask:
+    driver: bridge
+
+volumes:
+  logs:
+    driver: local

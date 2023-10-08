@@ -26,15 +26,15 @@ while True:
 '''
 
 
-def do_scrapping(config: dict) -> bool:
+def do_scrapping(config: dict):
     data = scrap(config)
     valid_jokes, invalid_jokes = validate_data(data)
-    print(type(valid_jokes))
-    print(type(invalid_jokes))
     df_valid_jokes = pd.DataFrame(valid_jokes)
-    print(df_valid_jokes.head())
-    #storage = cns_storage.jokes_storage(config)
-    return True
+    df_valid_jokes['categories'] = df_valid_jokes['categories'].apply(lambda x: str(x).replace('[', '').replace(']', ''))
+    storage = cns_storage.jokes_storage(config)
+    storage.add_valid_data(df_valid_jokes)
+    if len(invalid_jokes)>0:
+        storage.add_invalid_data(invalid_jokes)
 
 
 if __name__ == "__main__":

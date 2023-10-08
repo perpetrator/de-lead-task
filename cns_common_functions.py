@@ -22,7 +22,7 @@ def load_config(config_file: str) -> dict:
     return config
 
 
-def init_db_engine(config) -> object:
+def init_db_engine(config, database="master") -> object:
     """
     Function initializes database engine using info from config and test it (by querying 'SELECT 1').
 
@@ -33,7 +33,7 @@ def init_db_engine(config) -> object:
     """
     # odbc driver auto selection
     suitable_drivers = [
-        driv for driv in pyodbc.drivers() if driv.endswith("SQL Server")
+        driv for driv in pyodbc.drivers()
     ]
     drivers_ranking = [
         "ODBC Driver 18 for SQL Server",
@@ -59,10 +59,13 @@ def init_db_engine(config) -> object:
                 + config["server"]
                 + ";Port="
                 + config["port"]
+                + ";DATABASE="
+                + database
                 + ";UID="
                 + config["user"]
                 + ";PWD="
                 + config["password"]
+                +";TrustServerCertificate=yes;"
         )
         quoted = parse.quote_plus(con_str)
         engine = create_engine(

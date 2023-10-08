@@ -1,9 +1,10 @@
 import logging
 import json
-import time
+
 import pandas as pd
 from cns_common_functions import init_db_engine
 from sqlalchemy import text
+from datetime import date
 
 
 class jokes_storage:
@@ -16,13 +17,20 @@ class jokes_storage:
         self.table = config['TABLE']
         self.engine = init_db_engine(config)
         self.connection = self.engine.connect()
-        self.valid_storage = config["valid_storage"]
-        self.invalid_storage = config["invalid_storage"]
+        self.malformed_data_path = config['MALFORMED_DATA_PATH']
 
         try:
             query = text(
                 "IF NOT EXISTS (SELECT 1 FROM sys.databases where name = '" + self.database + "') CREATE DATABASE [" + self.database + "]")
             self.connection.execute(query)
+            self.connection.close()
+            self.engine.dispose()
+            logging.info("Database available")
+
+            # after making sure that database exists, we can reinitialize engine
+            self.engine = init_db_engine(config, database=self.database)
+            self.connection = self.engine.connect()
+            logging.debug("Database engine reinitialized")
 
         except Exception as e:
             logging.error("Error while checking if db exist: {}".format(e))
@@ -30,9 +38,9 @@ class jokes_storage:
 
         try:
             query = text(
-                "USE ["+self.database+"]; IF NOT EXISTS (SELECT 1 FROM sys.tables where name = '" + self.table + "') CREATE TABLE ["+self.database+"].[dbo].[" + self.table + "] ([id] [nvarchar](4000) NULL, [asdre] [bigint] NULL)")
+                "USE [" + self.database + "]; IF NOT EXISTS (SELECT 1 FROM sys.tables where name = '" + self.table + "') CREATE TABLE [" + self.database + "].[dbo].[" + self.table + "] ([categories] [nvarchar](4000) NULL, [created_at]  [nvarchar](4000) NULL, [icon_url] [nvarchar](4000) NULL, [id] [nvarchar](200) PRIMARY KEY CLUSTERED, [updated_at] [nvarchar](4000) NULL, [url] [nvarchar](4000) NULL, [value] [nvarchar](4000) NULL)")
             self.connection.execute(query)
-
+            logging.info("Table " + self.table + " available")
         except Exception as e:
             logging.error("Error while crating table: {}".format(e))
             raise
@@ -41,23 +49,56 @@ class jokes_storage:
         self.connection.close()
         self.engine.dispose()
 
-    @staticmethod
-    def store_valid_data(data: dict, config: dict) -> bool:
+    def add_valid_data(self, data: pd.DataFrame):
         """
-        Function to store data
-        :param data: data to store
-        :param config: config
-        :return: True if success, False otherwise
+        Function to store data in a database
+        :param data:
         """
+
         try:
-            # print(data)
-            engine = init_db_engine(config)
-            time_idx = str(time.time())
-            with open(f"data_{time_idx}.json", "w") as f:
-                json.dump(data, f)
+            data.to_sql(
+                "tmp_" + self.table,
+                con=self.engine,
+                index=False,
+                if_exists="replace",
+            )
+            logging.info("Data stored in tmp table")
+
+            query = "insert into " + self.table + "(" + """
+                [categories]
+                ,[created_at]
+                ,[icon_url]
+                ,[id]
+                ,[updated_at]
+                ,[url]
+                ,[value])
+                SELECT 
+                [categories]
+                ,[created_at] 
+                ,[icon_url]
+                ,[id]
+                ,[updated_at]
+                ,[url]
+                ,[value]
+                FROM """ + "tmp_" + self.table + " where id not in (select id from " + self.table + ")"
+
+            self.connection.execute(text(query))
+            logging.info("Data stored in main table")
+            query = "drop table tmp_" + self.table
+            self.connection.execute(text(query))
+            logging.info("Temporary table dropped")
 
         except Exception as e:
             logging.error("Error while storing data: {}".format(e))
             raise
 
-        return True
+    @staticmethod
+    def add_invalid_data(self, data):
+        """
+        Function to store malformed data in a file system
+        :param self:
+        :param data:
+        """
+        with open(f"{self.malformed_data_path}data_{str(date.today())}.json", "a") as f:
+            json.dump(data, f)
+        logging.info("Malformed data stored in: "+f"{self.malformed_data_path}data_{str(date.today())}.json")

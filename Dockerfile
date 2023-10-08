@@ -18,4 +18,6 @@ ENV ENV_TYPE PROD
 RUN chmod +x /usr/app/src/install_odbc.sh
 RUN /usr/app/src/install_odbc.sh
 
+#run the app
+RUN python3 /usr/app/src/cns.py
 CMD ["sh"]
