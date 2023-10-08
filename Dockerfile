@@ -1,6 +1,6 @@
 FROM python:latest
 
-VOLUME /var/log/scrapper
+VOLUME /var/log/scraper
 
 WORKDIR /usr/app/src
 
@@ -8,6 +8,6 @@ COPY . .
 
 RUN pip install -r requirements.txt
 
-ENV URL="https://api.chucknorris.io/jokes/random"
+ENV ENV_TYPE PROD
 
 CMD ["bash"]
